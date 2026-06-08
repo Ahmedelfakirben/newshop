@@ -96,7 +96,7 @@ export default function Navbar() {
             <div className="relative w-10 h-10 rounded-full overflow-hidden border border-pink-500/50">
               <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
             </div>
-            <span className="text-sm font-black tracking-wider text-white">LINA STORE</span>
+            <span className="text-sm font-black tracking-wider text-white">Shopping by Lina</span>
           </div>
 
           <button
@@ -127,7 +127,7 @@ export default function Navbar() {
                 <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-5 h-5 text-pink-400" />
                 </div>
-                <span className="text-xs font-bold leading-tight">📍Avenue aljoulane, Tétouan</span>
+                <span className="text-xs font-bold leading-tight">Avenue aljoulane, Tétouan</span>
               </div>
               <div className="flex items-center space-x-4 text-gray-300">
                 <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
