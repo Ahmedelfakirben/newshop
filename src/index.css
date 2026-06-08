@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-black text-white antialiased;
+  }
+  @media (min-width: 768px) {
+    body, a, button, input, select {
+      cursor: none !important;
+    }
+  }
+}
+
+@layer utilities {
+  .hero-bg-custom {
+    background-image: url(/images/A444D8D1-E599-4010-9682-C3E8167BA6FF.PNG);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: left center;
+  }
+
+  @media (min-width: 768px) {
+    .hero-bg-custom {
+      background-size: 100% 100%;
+      background-position: center 30%;
+    }
+  }
+
+  .bg-gradient-fashion {
+    background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+  }
+
+  .text-gradient-fashion {
+    background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
