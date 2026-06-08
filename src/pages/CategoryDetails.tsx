@@ -294,7 +294,7 @@ export default function CategoryDetails() {
                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${categoriesOpen ? 'rotate-180' : ''}`} />
               </button>
               <div className={`transition-all duration-300 overflow-hidden ${categoriesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                   {categories.map((cat) => (
                     <button
                       key={cat.id}

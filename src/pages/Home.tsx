@@ -260,7 +260,7 @@ export default function Home() {
         {/* Background Parallax Layer */}
         <div className="absolute inset-0 z-0">
           <div 
-            className="hero-image-inner absolute inset-0 w-full h-full bg-no-repeat bg-cover md:bg-[length:100%_100%] bg-left md:bg-[center_30%]"
+            className="hero-image-inner absolute inset-0 w-full h-full bg-no-repeat bg-cover md:bg-[length:100%_100%] bg-right md:bg-[center_30%]"
             style={{ backgroundImage: 'url(/images/A444D8D1-E599-4010-9682-C3E8167BA6FF.PNG)' }}
           ></div>
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>

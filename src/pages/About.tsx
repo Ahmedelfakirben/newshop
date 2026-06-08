@@ -59,10 +59,10 @@ export default function About() {
         {/* Background Image with Parallax */}
         <div className="absolute inset-0 z-0">
           <div 
-            className="about-bg absolute inset-[-20%] w-[140%] h-[140%] bg-cover bg-center opacity-40"
+            className="about-bg absolute inset-[-20%] w-[140%] h-[140%] bg-cover bg-center opacity-85"
             style={{ backgroundImage: 'url(/images/categories-background.jpg)' }}
           ></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black"></div>
         </div>
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
