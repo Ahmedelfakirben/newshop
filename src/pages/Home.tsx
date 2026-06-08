@@ -183,25 +183,6 @@ export default function Home() {
       observer.observe(el);
     });
 
-    // Hero re-trigger on scroll back up
-    if (heroTextRef.current) {
-      ScrollTrigger.create({
-        trigger: heroTextRef.current,
-        start: "top bottom", 
-        end: "bottom top", 
-        onLeave: () => {
-          gsap.set('.hero-title-word', { opacity: 0, y: 150, rotateX: -80, filter: 'blur(10px)', scale: 0.9 });
-        },
-        onEnterBack: () => {
-          gsap.to('.hero-title-word', { 
-            y: 0, opacity: 1, rotateX: 0, filter: 'blur(0px)', scale: 1, 
-            duration: 1.2, stagger: 0.1, ease: 'back.out(1.2)', transformOrigin: "left bottom",
-            overwrite: "auto"
-          });
-        }
-      });
-    }
-
     return () => observer.disconnect();
   }, [loaderFinished]);
 

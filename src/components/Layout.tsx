@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Lenis from 'lenis';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 
 import Navbar from './Navbar';
 import CustomCursor from './CustomCursor';
@@ -11,7 +11,9 @@ import PageTransition from './PageTransition';
 
 export default function Layout() {
   const lenisRef = useRef<Lenis | null>(null);
+  const location = useLocation();
 
+  // Initialize Lenis scroll
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -35,6 +37,14 @@ export default function Layout() {
       lenis.destroy();
     };
   }, []);
+
+  // Reset scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(0, { immediate: true });
+    }
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col font-sans">
