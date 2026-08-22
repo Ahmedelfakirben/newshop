@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Phone, MapPin, MessageCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Menu, X, Phone, MapPin, MessageCircle, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
+import { supabase } from '../lib/supabase';
 
 export default function Navbar() {
   const { items, toggleCart } = useCartStore();
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [availableSizes, setAvailableSizes] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -14,14 +19,57 @@ export default function Navbar() {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+      setCategoriesExpanded(false);
     }
   }, [mobileMenuOpen]);
 
+  // Fetch categories and active sizes for mobile navigation dropdown
+  useEffect(() => {
+    async function fetchMenuData() {
+      try {
+        const { data: catData } = await supabase
+          .from('categories')
+          .select('*')
+          .order('name');
+        if (catData) setCategories(catData);
+
+        const { data: prodData } = await supabase
+          .from('products')
+          .select('product_sizes(size_name, stock)')
+          .eq('available', true);
+
+        if (prodData) {
+          const sizesSet = new Set<string>();
+          prodData.forEach((p: any) => {
+            p.product_sizes?.forEach((s: any) => {
+              if (s.stock > 0 && s.size_name) sizesSet.add(s.size_name);
+            });
+          });
+          const sorted = Array.from(sizesSet).sort((a, b) => {
+            const numA = parseFloat(a);
+            const numB = parseFloat(b);
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            return a.localeCompare(b);
+          });
+          setAvailableSizes(sorted);
+        }
+      } catch (err) {
+        console.error('Error fetching navbar categories/sizes:', err);
+      }
+    }
+    fetchMenuData();
+  }, []);
+
+  const handleMobileNav = (url: string) => {
+    setMobileMenuOpen(false);
+    navigate(url);
+  };
+
   const navLinks = [
-    { href: '/', label: 'BOUTIQUE' },
-    { href: '/categories', label: 'CATÉGORIES' },
-    { href: '/about', label: 'QUI SOMMES-NOUS' },
-    { href: '/contact', label: 'CONTACT' },
+    { href: '/', label: 'BOUTIQUE', isExpandable: false },
+    { href: '/categories', label: 'CATÉGORIES', isExpandable: true },
+    { href: '/about', label: 'QUI SOMMES-NOUS', isExpandable: false },
+    { href: '/contact', label: 'CONTACT', isExpandable: false },
   ];
 
   return (
@@ -107,22 +155,107 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="flex flex-col min-h-full pt-32 pb-12 px-8">
-          <div className="space-y-6 flex-grow">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="block text-4xl font-black text-white/50 border-b border-white/10 pb-6 hover:text-white transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+        <div className="flex flex-col min-h-full pt-28 pb-12 px-6 sm:px-8">
+          <div className="space-y-4 flex-grow">
+            {navLinks.map((link) => {
+              if (link.isExpandable) {
+                return (
+                  <div key={link.href} className="border-b border-white/10 pb-4">
+                    <button
+                      onClick={() => setCategoriesExpanded(!categoriesExpanded)}
+                      className="w-full flex items-center justify-between text-left text-3xl sm:text-4xl font-black text-white/70 hover:text-white transition-colors cursor-pointer py-2"
+                    >
+                      <span>{link.label}</span>
+                      <ChevronDown
+                        className={`w-7 h-7 transition-transform duration-300 text-pink-400 ${
+                          categoriesExpanded ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* Expandable Dropdown with Categories & Sizes Filter */}
+                    <div
+                      className={`transition-all duration-500 overflow-hidden ${
+                        categoriesExpanded
+                          ? 'max-h-[850px] opacity-100 mt-4 space-y-5'
+                          : 'max-h-0 opacity-0 mt-0 pointer-events-none'
+                      }`}
+                    >
+                      {/* View All Button */}
+                      <button
+                        onClick={() => handleMobileNav('/categories')}
+                        className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/40 text-pink-400 font-bold uppercase tracking-widest text-xs flex items-center justify-between hover:bg-pink-500 hover:text-white transition-all cursor-pointer shadow-[0_0_15px_rgba(236,72,153,0.2)]"
+                      >
+                        <span>✦ Voir toutes les collections</span>
+                        <span>→</span>
+                      </button>
+
+                      {/* Categories List */}
+                      {categories.length > 0 && (
+                        <div className="space-y-2.5">
+                          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
+                            Par Catégorie
+                          </p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {categories.map((cat) => (
+                              <button
+                                key={cat.id}
+                                onClick={() => handleMobileNav(`/categories?category=${cat.id}`)}
+                                className="text-left px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-pink-500/50 hover:bg-pink-500/10 text-gray-300 hover:text-pink-300 text-xs font-bold uppercase tracking-wider transition-all truncate cursor-pointer"
+                              >
+                                {cat.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sizes Filter List */}
+                      {availableSizes.length > 0 && (
+                        <div className="space-y-2.5 pt-3 border-t border-white/10">
+                          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
+                            <SlidersHorizontal className="w-3 h-3 text-purple-400" />
+                            <span>Filtrer par Taille</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 max-h-[180px] overflow-y-auto pr-1">
+                            <button
+                              onClick={() => handleMobileNav('/categories?size=all')}
+                              className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:border-purple-500/50 hover:bg-purple-500/10 hover:text-purple-300 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                            >
+                              Tout
+                            </button>
+                            {availableSizes.map((size) => (
+                              <button
+                                key={size}
+                                onClick={() => handleMobileNav(`/categories?size=${encodeURIComponent(size)}`)}
+                                className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:border-purple-500/50 hover:bg-purple-500/10 hover:text-purple-300 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="block text-3xl sm:text-4xl font-black text-white/50 border-b border-white/10 pb-4 hover:text-white transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
 
-          <div className="mt-12 space-y-10 border-t border-white/10 pt-10">
-            <div className="grid grid-cols-1 gap-6">
+          <div className="mt-8 space-y-8 border-t border-white/10 pt-8">
+            <div className="grid grid-cols-1 gap-4">
               <div className="flex items-center space-x-4 text-gray-300">
                 <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-5 h-5 text-pink-400" />

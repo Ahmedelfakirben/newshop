@@ -286,12 +286,12 @@ export default function Home() {
               Style | Qualité | Performance
             </p>
             
-            <button
-              onClick={() => horizontalSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
-              className="hero-title-word mt-12 bg-white text-black px-12 py-5 rounded-full font-black text-lg hover:bg-pink-500 hover:text-white transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(236,72,153,0.6)] hover:scale-105 active:scale-95 duration-300 uppercase tracking-widest"
+            <Link
+              to="/categories"
+              className="hero-title-word inline-block mt-12 bg-white text-black px-12 py-5 rounded-full font-black text-lg hover:bg-pink-500 hover:text-white transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(236,72,153,0.6)] hover:scale-105 active:scale-95 duration-300 uppercase tracking-widest text-center cursor-pointer"
             >
               Découvrir la collection
-            </button>
+            </Link>
           </div>
         </div>
       </section>
