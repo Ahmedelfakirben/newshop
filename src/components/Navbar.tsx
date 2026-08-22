@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ShoppingCart, Menu, X, Phone, MapPin, MessageCircle, 
-  ChevronDown, ChevronRight, Sparkles, Store, Compass, Info, Mail
+  ChevronDown, ChevronRight, Store, Compass, Info, Mail
 } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { supabase } from '../lib/supabase';
@@ -54,10 +54,10 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { href: '/', label: 'Boutique', code: '01', icon: Store, isExpandable: false },
-    { href: '/categories', label: 'Catégories', code: '02', icon: Compass, isExpandable: true },
-    { href: '/about', label: 'Qui sommes-nous', code: '03', icon: Info, isExpandable: false },
-    { href: '/contact', label: 'Contact', code: '04', icon: Mail, isExpandable: false },
+    { href: '/', label: 'Boutique', icon: Store, isExpandable: false },
+    { href: '/categories', label: 'Catégories', icon: Compass, isExpandable: true },
+    { href: '/about', label: 'Qui sommes-nous', icon: Info, isExpandable: false },
+    { href: '/contact', label: 'Contact', icon: Mail, isExpandable: false },
   ];
 
   return (
@@ -153,14 +153,10 @@ export default function Navbar() {
         </div>
 
         {/* Menu Content */}
-        <div className="flex flex-col min-h-[calc(100%-72px)] justify-between px-6 py-8 relative z-10 space-y-10">
+        <div className="flex flex-col min-h-[calc(100%-72px)] justify-between px-6 py-8 relative z-10 space-y-8">
           
           {/* Main Navigation List */}
           <div className="space-y-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 px-2 mb-2">
-              Navigation
-            </p>
-
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = location.pathname === link.href;
@@ -183,27 +179,15 @@ export default function Navbar() {
                         }`}>
                           <Icon className="w-5 h-5" />
                         </div>
-                        <div className="text-left">
-                          <span className="text-[10px] font-mono font-bold text-pink-400/80 tracking-widest block">
-                            {link.code}
-                          </span>
-                          <span className="text-base font-black tracking-wide uppercase text-white">
-                            {link.label}
-                          </span>
-                        </div>
+                        <span className="text-base font-black tracking-wide uppercase text-white">
+                          {link.label}
+                        </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {categories.length > 0 && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-gray-300 uppercase tracking-wider">
-                            {categories.length}
-                          </span>
-                        )}
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-300 ${
-                          categoriesExpanded ? 'rotate-180 bg-pink-500/20 text-pink-400' : 'text-gray-400'
-                        }`}>
-                          <ChevronDown className="w-4 h-4" />
-                        </div>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-300 ${
+                        categoriesExpanded ? 'rotate-180 bg-pink-500/20 text-pink-400' : 'text-gray-400'
+                      }`}>
+                        <ChevronDown className="w-4 h-4" />
                       </div>
                     </div>
 
@@ -215,15 +199,12 @@ export default function Navbar() {
                           : 'max-h-0 opacity-0 pointer-events-none'
                       }`}
                     >
-                      {/* View All Button */}
+                      {/* View All Button without emoticon */}
                       <button
                         onClick={() => handleMobileNav('/categories')}
                         className="w-full p-3.5 rounded-xl bg-gradient-to-r from-pink-500/20 via-purple-500/15 to-transparent border border-pink-500/30 hover:border-pink-500 text-pink-300 hover:text-white text-xs font-black uppercase tracking-wider flex items-center justify-between transition-all cursor-pointer group"
                       >
-                        <span className="flex items-center gap-2">
-                          <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-                          Toutes les collections
-                        </span>
+                        <span>Voir toutes les catégories</span>
                         <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </button>
 
@@ -266,14 +247,9 @@ export default function Navbar() {
                     }`}>
                       <Icon className="w-5 h-5" />
                     </div>
-                    <div className="text-left">
-                      <span className="text-[10px] font-mono font-bold text-pink-400/80 tracking-widest block">
-                        {link.code}
-                      </span>
-                      <span className="text-base font-black tracking-wide uppercase">
-                        {link.label}
-                      </span>
-                    </div>
+                    <span className="text-base font-black tracking-wide uppercase">
+                      {link.label}
+                    </span>
                   </div>
 
                   <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-pink-400 group-hover:translate-x-1 transition-all" />
