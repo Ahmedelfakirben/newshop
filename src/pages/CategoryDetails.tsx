@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import ProductCard from '../components/ProductCard';
-import { ArrowLeft, ChevronLeft, ChevronRight, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, SlidersHorizontal, ChevronDown, LayoutGrid } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -25,8 +25,10 @@ export default function CategoryDetails() {
   const [selectedSize, setSelectedSize] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [loading, setLoading] = useState(true);
-  const [sizesOpen, setSizesOpen] = useState(window.innerWidth >= 1024);
-  const [categoriesOpen, setCategoriesOpen] = useState(window.innerWidth >= 1024);
+  
+  // Both filters start closed by default
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [sizesOpen, setSizesOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -64,7 +66,6 @@ export default function CategoryDetails() {
         }
 
         // Fetch products in this category
-        // Fetch including product sizes so we can extract sizes and check stock
         const { data: prodData } = await supabase
           .from('products')
           .select('*, product_sizes(*)')
@@ -86,15 +87,14 @@ export default function CategoryDetails() {
           prodData.forEach(prod => {
             if (prod.product_sizes && prod.product_sizes.length > 0) {
               prod.product_sizes.forEach((s: any) => {
-                if (s.stock > 0) {
+                if (s.stock > 0 && s.size_name) {
                   sizesSet.add(s.size_name);
                 }
               });
             }
           });
-          // Sort sizes alphabetically or logically if they are numeric
+          // Sort sizes alphabetically or logically if numeric
           const sortedSizes = Array.from(sizesSet).sort((a, b) => {
-            // Check if sizes are numbers (e.g. shoe sizes "38", "39")
             const numA = parseFloat(a);
             const numB = parseFloat(b);
             if (!isNaN(numA) && !isNaN(numB)) {
@@ -224,7 +224,7 @@ export default function CategoryDetails() {
         <div className="cat-detail-header-anim opacity-0 flex justify-between items-center mb-8">
           <button
             onClick={() => navigate('/categories')}
-            className="flex items-center space-x-2 text-gray-400 hover:text-pink-500 transition-colors group"
+            className="flex items-center space-x-2 text-gray-400 hover:text-pink-500 transition-colors group cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-bold tracking-widest uppercase text-xs">Collections</span>
@@ -238,21 +238,52 @@ export default function CategoryDetails() {
         {/* Filters and Navigation Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-12" id="products-grid-top">
           
-          {/* SIDEBAR: Category Selector & Size Filters */}
-          <div className="lg:col-span-3 filter-bar-anim opacity-0 space-y-8 bg-zinc-950 border border-white/5 rounded-3xl p-6 md:p-8">
+          {/* SIDEBAR: Category Selector (1st) & Size Filters (2nd) */}
+          <div className="lg:col-span-3 filter-bar-anim opacity-0 space-y-6 bg-zinc-950 border border-white/5 rounded-3xl p-6 md:p-8">
             
-            {/* Dynamic Sizes Filter */}
+            {/* 1. Category Switcher (FIRST) */}
+            <div className="border-b border-white/5 pb-6">
+              <button
+                onClick={() => setCategoriesOpen(!categoriesOpen)}
+                className="w-full flex justify-between items-center text-xs font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <LayoutGrid className="w-3.5 h-3.5 text-pink-400" />
+                  <span>Catégories</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${categoriesOpen ? 'rotate-180 text-pink-400' : ''}`} />
+              </button>
+              <div className={`transition-all duration-300 overflow-hidden ${categoriesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
+                <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => navigate(`/categories/${cat.id}`)}
+                      className={`text-left px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                        id === cat.id
+                          ? 'border-pink-500/30 bg-pink-500/10 text-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.2)]'
+                          : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Dynamic Sizes Filter (SECOND) */}
             {availableSizes.length > 0 && (
-              <div className="border-b border-white/5 pb-6">
+              <div>
                 <button
                   onClick={() => setSizesOpen(!sizesOpen)}
-                  className="w-full flex justify-between items-center text-xs font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors"
+                  className="w-full flex justify-between items-center text-xs font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-purple-400" />
                     <span>Filtrer par taille</span>
                   </div>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${sizesOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${sizesOpen ? 'rotate-180 text-purple-400' : ''}`} />
                 </button>
                 <div className={`transition-all duration-300 overflow-hidden ${sizesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
                   <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2">
@@ -283,34 +314,6 @@ export default function CategoryDetails() {
                 </div>
               </div>
             )}
-
-            {/* Category Switcher */}
-            <div>
-              <button
-                onClick={() => setCategoriesOpen(!categoriesOpen)}
-                className="w-full flex justify-between items-center text-xs font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors"
-              >
-                <span>Catégories</span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${categoriesOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <div className={`transition-all duration-300 overflow-hidden ${categoriesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
-                <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => navigate(`/categories/${cat.id}`)}
-                      className={`text-left px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border cursor-pointer ${
-                        id === cat.id
-                          ? 'border-pink-500/30 bg-pink-500/10 text-pink-400'
-                          : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
 
             {/* Total Results Summary */}
             <div className="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-gray-500 uppercase tracking-widest font-bold">

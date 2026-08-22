@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Phone, MapPin, MessageCircle, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { ShoppingCart, Menu, X, Phone, MapPin, MessageCircle, ChevronDown, SlidersHorizontal, LayoutGrid } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { supabase } from '../lib/supabase';
 
@@ -124,7 +124,7 @@ export default function Navbar() {
             {/* Mobile Menu Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden flex items-center p-2 bg-white/10 rounded-full text-white"
+              className="md:hidden flex items-center p-2 bg-white/10 rounded-full text-white cursor-pointer"
               aria-label="Open menu"
             >
               <Menu className="w-5 h-5" strokeWidth={2} />
@@ -149,7 +149,7 @@ export default function Navbar() {
 
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center space-x-2 p-2 bg-white/10 rounded-full text-white"
+            className="flex items-center space-x-2 p-2 bg-white/10 rounded-full text-white cursor-pointer"
           >
             <X className="w-6 h-6" strokeWidth={2} />
           </button>
@@ -173,7 +173,7 @@ export default function Navbar() {
                       />
                     </button>
 
-                    {/* Expandable Dropdown with Categories & Sizes Filter */}
+                    {/* Expandable Dropdown (Collapsed by default) */}
                     <div
                       className={`transition-all duration-500 overflow-hidden ${
                         categoriesExpanded
@@ -190,12 +190,13 @@ export default function Navbar() {
                         <span>→</span>
                       </button>
 
-                      {/* Categories List */}
+                      {/* 1. Categories List (FIRST) */}
                       {categories.length > 0 && (
                         <div className="space-y-2.5">
-                          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
-                            Par Catégorie
-                          </p>
+                          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
+                            <LayoutGrid className="w-3 h-3 text-pink-400" />
+                            <span>Par Catégorie</span>
+                          </div>
                           <div className="grid grid-cols-2 gap-2">
                             {categories.map((cat) => (
                               <button
@@ -210,7 +211,7 @@ export default function Navbar() {
                         </div>
                       )}
 
-                      {/* Sizes Filter List */}
+                      {/* 2. Sizes Filter List (SECOND) */}
                       {availableSizes.length > 0 && (
                         <div className="space-y-2.5 pt-3 border-t border-white/10">
                           <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">

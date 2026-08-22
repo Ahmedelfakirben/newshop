@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import ProductCard from '../components/ProductCard';
-import { SlidersHorizontal, ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, LayoutGrid } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -19,7 +19,7 @@ export default function Categories() {
   const [products, setProducts] = useState<any[]>([]);
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   
-  // Filter state
+  // Filter state (starts closed by default)
   const paramCategory = searchParams.get('category') || 'all';
   const paramSize = searchParams.get('size') || 'all';
   
@@ -27,8 +27,8 @@ export default function Categories() {
   const [selectedSize, setSelectedSize] = useState<string>(paramSize);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [loading, setLoading] = useState(true);
-  const [sizesOpen, setSizesOpen] = useState(true);
-  const [categoriesOpen, setCategoriesOpen] = useState(true);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [sizesOpen, setSizesOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -283,21 +283,62 @@ export default function Categories() {
         {/* Filters and Navigation Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-12" id="products-grid-top">
           
-          {/* SIDEBAR: Category Selector & Size Filters */}
-          <div className="lg:col-span-3 filter-bar-anim opacity-0 space-y-8 bg-zinc-950 border border-white/5 rounded-3xl p-6 md:p-8">
+          {/* SIDEBAR: Category Selector (1st) & Size Filters (2nd) */}
+          <div className="lg:col-span-3 filter-bar-anim opacity-0 space-y-6 bg-zinc-950 border border-white/5 rounded-3xl p-6 md:p-8">
             
-            {/* Dynamic Sizes Filter */}
+            {/* 1. Category Switcher (FIRST) */}
+            <div className="border-b border-white/5 pb-6">
+              <button
+                onClick={() => setCategoriesOpen(!categoriesOpen)}
+                className="w-full flex justify-between items-center text-xs font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <LayoutGrid className="w-3.5 h-3.5 text-pink-400" />
+                  <span>Catégories</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${categoriesOpen ? 'rotate-180 text-pink-400' : ''}`} />
+              </button>
+              <div className={`transition-all duration-300 overflow-hidden ${categoriesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
+                <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                  <button
+                    onClick={() => handleCategorySelect('all')}
+                    className={`text-left px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                      selectedCategory === 'all'
+                        ? 'border-pink-500/30 bg-pink-500/10 text-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.2)]'
+                        : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    Toutes les catégories
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => handleCategorySelect(cat.id)}
+                      className={`text-left px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                        selectedCategory === cat.id
+                          ? 'border-pink-500/30 bg-pink-500/10 text-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.2)]'
+                          : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Dynamic Sizes Filter (SECOND) */}
             {availableSizes.length > 0 && (
-              <div className="border-b border-white/5 pb-6">
+              <div>
                 <button
                   onClick={() => setSizesOpen(!sizesOpen)}
                   className="w-full flex justify-between items-center text-xs font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-purple-400" />
                     <span>Filtrer par taille</span>
                   </div>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${sizesOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${sizesOpen ? 'rotate-180 text-purple-400' : ''}`} />
                 </button>
                 <div className={`transition-all duration-300 overflow-hidden ${sizesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
                   <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2">
@@ -328,44 +369,6 @@ export default function Categories() {
                 </div>
               </div>
             )}
-
-            {/* Category Switcher */}
-            <div>
-              <button
-                onClick={() => setCategoriesOpen(!categoriesOpen)}
-                className="w-full flex justify-between items-center text-xs font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <span>Catégories</span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${categoriesOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <div className={`transition-all duration-300 overflow-hidden ${categoriesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
-                <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                  <button
-                    onClick={() => handleCategorySelect('all')}
-                    className={`text-left px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border cursor-pointer ${
-                      selectedCategory === 'all'
-                        ? 'border-pink-500/30 bg-pink-500/10 text-pink-400'
-                        : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    Toutes les catégories
-                  </button>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleCategorySelect(cat.id)}
-                      className={`text-left px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border cursor-pointer ${
-                        selectedCategory === cat.id
-                          ? 'border-pink-500/30 bg-pink-500/10 text-pink-400'
-                          : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
 
             {/* Total Results Summary */}
             <div className="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-gray-500 uppercase tracking-widest font-bold">
