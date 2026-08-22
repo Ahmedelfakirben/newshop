@@ -2,7 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import ProductCard from '../components/ProductCard';
-import { SlidersHorizontal, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, LayoutGrid } from 'lucide-react';
+import { 
+  SlidersHorizontal, ChevronDown, ChevronLeft, ChevronRight, 
+  ChevronsLeft, ChevronsRight, RotateCcw, LayoutGrid 
+} from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -167,6 +170,39 @@ export default function Categories() {
     setSelectedSize('all');
     setCurrentPage(1);
     setSearchParams({}, { replace: true });
+  };
+
+  // Smart 5-page window pagination builder
+  const getPaginationItems = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const items: (number | string)[] = [];
+
+    if (currentPage <= 4) {
+      for (let i = 1; i <= 5; i++) {
+        items.push(i);
+      }
+      items.push('...');
+      items.push(totalPages);
+    } else if (currentPage >= totalPages - 3) {
+      items.push(1);
+      items.push('...');
+      for (let i = totalPages - 4; i <= totalPages; i++) {
+        items.push(i);
+      }
+    } else {
+      items.push(1);
+      items.push('...');
+      items.push(currentPage - 1);
+      items.push(currentPage);
+      items.push(currentPage + 1);
+      items.push('...');
+      items.push(totalPages);
+    }
+
+    return items;
   };
 
   // GSAP Entrance Animations for Header & Filters
@@ -400,46 +436,90 @@ export default function Categories() {
                   ))}
                 </div>
 
-                {/* PAGINATION CONTROLS */}
+                {/* PREMIUM SMART PAGINATION CONTROLS */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 pt-6">
-                    {/* Previous Button */}
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:hover:text-gray-400 transition-all cursor-pointer"
-                      aria-label="Previous Page"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
+                  <div className="flex flex-col items-center gap-4 pt-10">
+                    <div className="bg-zinc-950/90 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.8)] inline-flex items-center gap-1.5 flex-wrap justify-center">
+                      
+                      {/* First Page button (<<) */}
+                      <button
+                        onClick={() => handlePageChange(1)}
+                        disabled={currentPage === 1}
+                        className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center justify-center cursor-pointer"
+                        title="Première page"
+                        aria-label="Première page"
+                      >
+                        <ChevronsLeft className="w-4 h-4" />
+                      </button>
 
-                    {/* Page Numbers */}
-                    {Array.from({ length: totalPages }, (_, index) => {
-                      const pageNum = index + 1;
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`w-12 h-12 rounded-xl font-bold transition-all border text-sm flex items-center justify-center cursor-pointer ${
-                            currentPage === pageNum
-                              ? 'bg-pink-500 border-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.3)]'
-                              : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30 hover:text-white hover:bg-white/10'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                      {/* Previous Page button (<) */}
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3.5 h-10 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer"
+                        aria-label="Page précédente"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        <span className="hidden sm:inline">Précédent</span>
+                      </button>
 
-                    {/* Next Button */}
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:hover:text-gray-400 transition-all cursor-pointer"
-                      aria-label="Next Page"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                      {/* Page Numbers & Ellipses */}
+                      {getPaginationItems().map((item, idx) => {
+                        if (typeof item === 'string') {
+                          return (
+                            <span
+                              key={`ellipsis-${idx}`}
+                              className="w-8 h-10 flex items-center justify-center text-gray-500 font-bold select-none text-sm tracking-widest"
+                            >
+                              •••
+                            </span>
+                          );
+                        }
+
+                        const isCurrent = currentPage === item;
+                        return (
+                          <button
+                            key={`page-${item}`}
+                            onClick={() => handlePageChange(item)}
+                            className={`w-10 h-10 rounded-xl font-black text-sm flex items-center justify-center transition-all cursor-pointer ${
+                              isCurrent
+                                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.5)] scale-105 border-transparent'
+                                : 'bg-white/5 border border-white/5 text-gray-300 hover:border-pink-500/40 hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            {item}
+                          </button>
+                        );
+                      })}
+
+                      {/* Next Page button (>) */}
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3.5 h-10 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer"
+                        aria-label="Page suivante"
+                      >
+                        <span className="hidden sm:inline">Suivant</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      {/* Last Page button (>>) */}
+                      <button
+                        onClick={() => handlePageChange(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center justify-center cursor-pointer"
+                        title="Dernière page"
+                        aria-label="Dernière page"
+                      >
+                        <ChevronsRight className="w-4 h-4" />
+                      </button>
+
+                    </div>
+
+                    {/* Subtitle / Counter indicator */}
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">
+                      Page <span className="text-pink-400 font-black">{currentPage}</span> sur <span className="text-white font-black">{totalPages}</span>
+                    </p>
                   </div>
                 )}
               </>
