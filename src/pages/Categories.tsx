@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import ProductCard from '../components/ProductCard';
@@ -20,7 +20,6 @@ export default function Categories() {
 
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   
   // Filter state (starts closed by default)
   const paramCategory = searchParams.get('category') || 'all';
@@ -76,29 +75,6 @@ export default function Categories() {
             return (product.stock ?? 0) > 0;
           });
           setProducts(availableProducts);
-
-          // Extract unique sizes with stock > 0 across all products
-          const sizesSet = new Set<string>();
-          prodData.forEach(prod => {
-            if (prod.product_sizes && prod.product_sizes.length > 0) {
-              prod.product_sizes.forEach((s: any) => {
-                if (s.stock > 0 && s.size_name) {
-                  sizesSet.add(s.size_name);
-                }
-              });
-            }
-          });
-
-          // Sort sizes (numeric or alphabetical)
-          const sortedSizes = Array.from(sizesSet).sort((a, b) => {
-            const numA = parseFloat(a);
-            const numB = parseFloat(b);
-            if (!isNaN(numA) && !isNaN(numB)) {
-              return numA - numB;
-            }
-            return a.localeCompare(b);
-          });
-          setAvailableSizes(sortedSizes);
         }
       } catch (error) {
         console.error("Error fetching categories catalog:", error);
@@ -108,6 +84,46 @@ export default function Categories() {
     }
     fetchData();
   }, []);
+
+  // Extract unique sizes DYNAMICALLY for the currently selected category only
+  const availableSizes = useMemo(() => {
+    const sizesSet = new Set<string>();
+    
+    // Scoped only to products in the selected category (or all if 'all' is selected)
+    const relevantProducts = selectedCategory === 'all'
+      ? products
+      : products.filter(p => p.category_id === selectedCategory);
+
+    relevantProducts.forEach(prod => {
+      if (prod.product_sizes && prod.product_sizes.length > 0) {
+        prod.product_sizes.forEach((s: any) => {
+          if (s.stock > 0 && s.size_name) {
+            sizesSet.add(s.size_name);
+          }
+        });
+      }
+    });
+
+    // Sort sizes (numeric or alphabetical)
+    return Array.from(sizesSet).sort((a, b) => {
+      const numA = parseFloat(a);
+      const numB = parseFloat(b);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return a.localeCompare(b);
+    });
+  }, [products, selectedCategory]);
+
+  // Reset selectedSize to 'all' if the selected size does not exist in the newly selected category
+  useEffect(() => {
+    if (selectedSize !== 'all' && availableSizes.length > 0 && !availableSizes.includes(selectedSize)) {
+      setSelectedSize('all');
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('size');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [availableSizes, selectedSize, searchParams, setSearchParams]);
 
   // Filter products by category & size
   const filteredProducts = products.filter(product => {
@@ -364,7 +380,7 @@ export default function Categories() {
             </div>
 
             {/* 2. Dynamic Sizes Filter (SECOND) */}
-            {availableSizes.length > 0 && (
+            {availableSizes.length > 0 ? (
               <div>
                 <button
                   onClick={() => setSizesOpen(!sizesOpen)}
@@ -404,7 +420,11 @@ export default function Categories() {
                   </div>
                 </div>
               </div>
-            )}
+            ) : selectedCategory !== 'all' ? (
+              <div className="text-xs text-gray-500 italic">
+                Aucune taille spécifique pour cette catégorie
+              </div>
+            ) : null}
 
             {/* Total Results Summary */}
             <div className="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-gray-500 uppercase tracking-widest font-bold">
@@ -496,7 +516,7 @@ export default function Categories() {
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3.5 h-10 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer"
+                        className="px-3.5 h-10 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer"
                         aria-label="Page suivante"
                       >
                         <span className="hidden sm:inline">Suivant</span>
