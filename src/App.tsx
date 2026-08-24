@@ -7,6 +7,7 @@ import Categories from './pages/Categories';
 import CategoryDetails from './pages/CategoryDetails';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import OrderDetails from './pages/OrderDetails';
 import './App.css';
 
 const router = createBrowserRouter([
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
         element: <ProductDetails />,
       },
       {
+        path: 'order/:id',
+        element: <OrderDetails />,
+      },
+      {
         path: 'about',
         element: <About />,
       },
@@ -45,7 +50,7 @@ const router = createBrowserRouter([
 function App() {
   // Système de contrôle de versions pour forcer le nettoyage du cache client lors des déploiements
   useEffect(() => {
-    const APP_VERSION = '1.0.1'; // Incrémenter pour forcer le rechargement propre
+    const APP_VERSION = '1.0.2'; // Incrémenter pour forcer le rechargement propre
     const savedVersion = localStorage.getItem('app_version');
     
     if (savedVersion !== APP_VERSION) {

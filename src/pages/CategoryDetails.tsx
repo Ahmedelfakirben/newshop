@@ -74,10 +74,14 @@ export default function CategoryDetails() {
           .select('*, product_sizes(*)')
           .eq('category_id', id)
           .eq('available', true)
+          .gt('base_price', 0)
           .order('created_at', { ascending: false });
 
         if (prodData) {
           const availableProducts = prodData.filter(product => {
+            const hasPrice = (product.base_price ?? 0) > 0;
+            if (!hasPrice) return false;
+
             if (product.product_sizes && product.product_sizes.length > 0) {
               return product.product_sizes.some((s: any) => s.stock > 0);
             }
@@ -289,8 +293,8 @@ export default function CategoryDetails() {
                 </div>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${categoriesOpen ? 'rotate-180 text-pink-400' : ''}`} />
               </button>
-              <div className={`transition-all duration-300 overflow-hidden ${categoriesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
-                <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+              <div className={`transition-all duration-300 ${categoriesOpen ? 'max-h-[600px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
+                <div className="flex flex-col gap-2 max-h-[340px] overflow-y-auto pr-2 scrollbar-thin overscroll-contain touch-pan-y">
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
@@ -321,8 +325,8 @@ export default function CategoryDetails() {
                   </div>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${sizesOpen ? 'rotate-180 text-purple-400' : ''}`} />
                 </button>
-                <div className={`transition-all duration-300 overflow-hidden ${sizesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2">
+                <div className={`transition-all duration-300 ${sizesOpen ? 'max-h-[600px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pr-2 scrollbar-thin overscroll-contain touch-pan-y">
                     <button
                       onClick={() => handleSizeSelect('all')}
                       className={`py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all border text-center cursor-pointer ${

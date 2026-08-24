@@ -1,21 +1,24 @@
 import { useEffect, useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { ShieldCheck, Truck, MessageCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { Link } from 'react-router-dom';
+import ProductCard from '../components/ProductCard';
+import { ShieldCheck, Truck, MessageCircle } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
+
   useSEO({
-    title: 'Accueil',
+    title: 'Accueil | Vêtements & Mode de Sport',
     description: 'Shopping by Lina - Boutique de Sport & Mode en ligne. Découvrez notre large sélection de vêtements, chaussures et accessoires de sport de haute qualité.',
   });
 
   const [products, setProducts] = useState<any[]>([]);
+  const [promoProducts, setPromoProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loaderFinished, setLoaderFinished] = useState(false);
@@ -30,18 +33,30 @@ export default function Home() {
   // Supabase Fetching
   useEffect(() => {
     async function fetchData() {
-      const [prodRes, catRes] = await Promise.all([
+      const [prodRes, catRes, promoRes] = await Promise.all([
         supabase
           .from('products')
           .select('*, product_sizes(*)')
           .eq('available', true)
+          .gt('base_price', 0)
           .order('created_at', { ascending: false })
           .limit(100),
-        supabase.from('categories').select('*').order('name')
+        supabase.from('categories').select('*').order('name'),
+        supabase
+          .from('products')
+          .select('*, product_sizes(*)')
+          .eq('available', true)
+          .eq('is_promo', true)
+          .gt('base_price', 0)
+          .order('created_at', { ascending: false })
+          .limit(20)
       ]);
 
       if (prodRes.data) {
         const availableProducts = prodRes.data.filter(product => {
+          const hasPrice = (product.base_price ?? 0) > 0;
+          if (!hasPrice) return false;
+
           if (product.product_sizes && product.product_sizes.length > 0) {
             return product.product_sizes.some((s: any) => s.stock > 0);
           }
@@ -49,7 +64,22 @@ export default function Home() {
         });
         setProducts(availableProducts.slice(0, 10)); // Take top 10 available
       }
-      
+
+      if (promoRes.data) {
+        const availablePromos = promoRes.data.filter(p => {
+          const hasPrice = (p.base_price ?? 0) > 0;
+          if (!hasPrice) return false;
+
+          const isPromo = p.is_promo && p.promo_price && p.promo_price > 0 && p.promo_price < p.base_price;
+          if (!isPromo) return false;
+          if (p.product_sizes && p.product_sizes.length > 0) {
+            return p.product_sizes.some((s: any) => s.stock > 0);
+          }
+          return (p.stock ?? 0) > 0;
+        });
+        setPromoProducts(availablePromos);
+      }
+
       if (catRes.data) {
         setCategories(catRes.data);
       }
@@ -384,6 +414,40 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* PROMOTIONS & OFFRES SPÉCIALES SECTION */}
+      {promoProducts.length > 0 && (
+        <section className="py-24 bg-gradient-to-b from-black to-zinc-950 border-t border-white/5 relative z-20 overflow-hidden">
+          <div className="max-w-[1800px] mx-auto px-4 md:px-12">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+              <div>
+                <span className="inline-block bg-rose-600/20 border border-rose-500/40 text-rose-400 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest mb-3">
+                  Offres Limitées
+                </span>
+                <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase text-white">
+                  Promotions <span className="text-rose-500">&amp; Offres Spéciales</span>
+                </h2>
+                <p className="text-gray-400 font-light mt-2 text-lg">
+                  Découvrez nos articles à prix réduits disponibles avec stock immédiat.
+                </p>
+              </div>
+              <Link 
+                to="/categories?category=promo" 
+                className="text-rose-400 hover:text-white font-bold uppercase tracking-widest text-sm transition-colors flex items-center gap-2 group"
+              >
+                Voir toutes les promos
+                <span className="group-hover:translate-x-2 transition-transform">→</span>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {promoProducts.slice(0, 4).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 3.5 CATEGORIES SECTION */}
       <section ref={categoriesSectionRef} className="categories-anim py-32 relative border-t border-white/5 overflow-hidden">

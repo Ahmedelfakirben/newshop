@@ -11,6 +11,8 @@ interface Product {
   category_id?: string;
   stock: number;
   created_at: string;
+  is_promo?: boolean;
+  promo_price?: number | null;
   product_sizes?: { size_name: string; stock: number }[];
 }
 
@@ -20,6 +22,9 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const isNew = new Date(product.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const isPromo = product.is_promo && product.promo_price && product.promo_price > 0 && product.promo_price < product.base_price;
+  const effectivePrice = isPromo ? product.promo_price! : (product.base_price ?? 0);
+  const discountPercent = isPromo ? Math.round(((product.base_price - product.promo_price!) / product.base_price) * 100) : 0;
 
   return (
     <Link to={`/product/${product.id}`}>
@@ -52,12 +57,20 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* NEW Badge */}
-          {isNew && (
-            <div className="absolute top-3 right-3 bg-gradient-fashion text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-              NOUVEAU
-            </div>
-          )}
+          {/* Badges */}
+          <div className="absolute top-3 left-3 right-3 flex justify-between items-center pointer-events-none z-10">
+            {isPromo ? (
+              <span className="bg-rose-600 text-white px-2.5 py-1 rounded-full text-[11px] font-black shadow-lg uppercase tracking-wider">
+                PROMO -{discountPercent}%
+              </span>
+            ) : <span />}
+
+            {isNew && (
+              <span className="bg-gradient-fashion text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                NOUVEAU
+              </span>
+            )}
+          </div>
 
           {/* Hover Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -95,9 +108,22 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           <div className="mt-auto flex items-end justify-between gap-2">
             <div>
-              <div className="text-lg md:text-xl font-black text-gradient-fashion">
-                {(product.base_price ?? 0).toFixed(2)} DH
-              </div>
+              {isPromo ? (
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-lg md:text-xl font-black text-rose-600">
+                      {effectivePrice.toFixed(2)} DH
+                    </span>
+                    <span className="text-xs text-gray-400 line-through font-semibold">
+                      {product.base_price.toFixed(2)} DH
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-lg md:text-xl font-black text-gradient-fashion">
+                  {(product.base_price ?? 0).toFixed(2)} DH
+                </div>
+              )}
               {(product.product_sizes && product.product_sizes.length > 0
                 ? product.product_sizes.some((s) => s.stock > 0)
                 : (product.stock ?? 0) > 0) ? (

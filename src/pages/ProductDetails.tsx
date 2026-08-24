@@ -45,7 +45,7 @@ export default function ProductDetails() {
         .eq('id', id)
         .single();
 
-      if (productData) {
+      if (productData && (productData.base_price ?? 0) > 0) {
         setProduct(productData);
 
         // Fetch Sizes
@@ -91,10 +91,14 @@ export default function ProductDetails() {
           .eq('category_id', productData.category_id)
           .neq('id', id)
           .eq('available', true)
+          .gt('base_price', 0)
           .limit(10);
 
         if (relatedData) {
           const availableRelated = relatedData.filter(p => {
+            const hasPrice = (p.base_price ?? 0) > 0;
+            if (!hasPrice) return false;
+
             if (p.product_sizes && p.product_sizes.length > 0) {
               return p.product_sizes.some((s: any) => s.stock > 0);
             }
@@ -102,6 +106,8 @@ export default function ProductDetails() {
           });
           setRelatedProducts(availableRelated.slice(0, 4));
         }
+      } else {
+        setProduct(null);
       }
       setLoading(false);
     }
@@ -125,10 +131,67 @@ export default function ProductDetails() {
     }
   }, [loading, product]);
 
-  const handleWhatsAppOrder = () => {
+  const isPromo = product?.is_promo && product?.promo_price && product?.promo_price > 0 && product?.promo_price < product?.base_price;
+  const effectiveBasePrice = isPromo ? product.promo_price : (product?.base_price ?? 0);
+  const discountPct = isPromo ? Math.round(((product.base_price - product.promo_price) / product.base_price) * 100) : 0;
+
+  const handleWhatsAppOrder = async () => {
     if (!product) return;
-    const sizeInfo = selectedSize ? `Taille : ${selectedSize}` : '';
-    const message = `Bonjour ! J'aimerais acheter ce produit :\n\n*${product.name}*\n${sizeInfo}\nPrix : ${product.base_price} DH\n\nLien : ${window.location.href}`;
+    const sizeObj = sizes.find(s => s.size_name === selectedSize);
+    const sizeModifier = sizeObj?.price_modifier || 0;
+    const unitPrice = effectiveBasePrice + sizeModifier;
+    const finalPrice = unitPrice.toFixed(2);
+    const sizeInfo = selectedSize ? ` (Taille : ${selectedSize})` : '';
+    const promoInfo = isPromo ? ' [PROMO]' : '';
+
+    let orderRefCode = '';
+    try {
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert([
+          {
+            status: 'pending',
+            payment_method: 'cash',
+            notes: 'WEB_WHATSAPP',
+            service_type: 'website',
+            total: unitPrice,
+          }
+        ])
+        .select()
+        .single();
+
+      if (!orderError && orderData) {
+        orderRefCode = orderData.id.slice(0, 8).toUpperCase();
+        await supabase.from('order_items').insert([
+          {
+            order_id: orderData.id,
+            product_id: product.id,
+            size_id: sizeObj?.id || null,
+            quantity: 1,
+            unit_price: unitPrice,
+            subtotal: unitPrice,
+            notes: selectedSize ? `Taille: ${selectedSize}` : ''
+          }
+        ]);
+      }
+    } catch (e) {
+      console.error('Error creating pending web order:', e);
+    }
+
+    let message = `Bonjour ! J'aimerais passer la commande suivante :\n\n`;
+    if (orderRefCode) {
+      message += `📌 *RÉFÉRENCE COMMANDE : #WEB-${orderRefCode}*\n\n`;
+    }
+    message += `1. *${product.name}*${sizeInfo}${promoInfo}\n   Quantité : 1 x ${finalPrice} DH\n\n`;
+    message += `*Total estimé : ${finalPrice} DH*\n\n`;
+    message += `Je reste dans l'attente de confirmer les détails de livraison.\n\n`;
+    message += `Lien produit : ${window.location.href}`;
+
+    if (orderRefCode) {
+      const orderUrl = `${window.location.origin}/order/WEB-${orderRefCode}`;
+      message += `\n\n🔗 *Suivi de commande / Seguimiento :*\n${orderUrl}`;
+    }
+
     const encoded = encodeURIComponent(message);
     window.open(`https://api.whatsapp.com/send?phone=212712130088&text=${encoded}`, '_blank');
   };
@@ -199,9 +262,23 @@ export default function ProductDetails() {
               {product.name}
             </h1>
             
-            <div className="product-info-anim text-3xl font-bold text-pink-500 mb-8">
-              {product.base_price.toFixed(2)} DH
-            </div>
+            {isPromo ? (
+              <div className="product-info-anim flex items-center gap-3 mb-8 flex-wrap">
+                <span className="text-4xl md:text-5xl font-black text-rose-500">
+                  {product.promo_price.toFixed(2)} DH
+                </span>
+                <span className="text-xl md:text-2xl text-gray-500 line-through font-semibold">
+                  {product.base_price.toFixed(2)} DH
+                </span>
+                <span className="bg-rose-600/20 text-rose-400 border border-rose-500/40 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
+                  PROMO -{discountPct}%
+                </span>
+              </div>
+            ) : (
+              <div className="product-info-anim text-3xl font-bold text-pink-500 mb-8">
+                {product.base_price.toFixed(2)} DH
+              </div>
+            )}
 
             {product.description && (
               <p className="product-info-anim text-gray-400 font-light text-lg mb-10 leading-relaxed">

@@ -48,16 +48,21 @@
 }
 
 /* Custom scrollbar utility for sidebar filters */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #ec4899 transparent;
+}
 .scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(24, 24, 27, 0.4);
+  border-radius: 9999px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #ec4899;
   border-radius: 9999px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #db2777;
+  background: #f472b6;
 }

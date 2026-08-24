@@ -65,10 +65,14 @@ export default function Categories() {
           .from('products')
           .select('*, product_sizes(*)')
           .eq('available', true)
+          .gt('base_price', 0)
           .order('created_at', { ascending: false });
 
         if (prodData) {
           const availableProducts = prodData.filter(product => {
+            const hasPrice = (product.base_price ?? 0) > 0;
+            if (!hasPrice) return false;
+
             if (product.product_sizes && product.product_sizes.length > 0) {
               return product.product_sizes.some((s: any) => s.stock > 0);
             }
@@ -127,8 +131,11 @@ export default function Categories() {
 
   // Filter products by category & size
   const filteredProducts = products.filter(product => {
-    // Category filter
-    if (selectedCategory !== 'all' && product.category_id !== selectedCategory) {
+    // Promo filter
+    if (selectedCategory === 'promo') {
+      const isPromo = product.is_promo && product.promo_price && product.promo_price > 0 && product.promo_price < product.base_price;
+      if (!isPromo) return false;
+    } else if (selectedCategory !== 'all' && product.category_id !== selectedCategory) {
       return false;
     }
     // Size filter
@@ -293,7 +300,18 @@ export default function Categories() {
             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
               Filtre actif :
             </span>
-            {selectedCategory !== 'all' && currentCategoryObj && (
+            {selectedCategory === 'promo' ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-xs font-bold uppercase tracking-wider">
+                Filtre: Promotions
+                <button 
+                  onClick={() => handleCategorySelect('all')} 
+                  className="hover:text-white ml-1 text-sm font-black cursor-pointer"
+                  title="Supprimer le filtre de promotion"
+                >
+                  ×
+                </button>
+              </span>
+            ) : selectedCategory !== 'all' && currentCategoryObj && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/20 border border-pink-500/40 text-pink-400 text-xs font-bold uppercase tracking-wider">
                 Catégorie: {currentCategoryObj.name}
                 <button 
@@ -350,8 +368,8 @@ export default function Categories() {
                 </div>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${categoriesOpen ? 'rotate-180 text-pink-400' : ''}`} />
               </button>
-              <div className={`transition-all duration-300 overflow-hidden ${categoriesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
-                <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+              <div className={`transition-all duration-300 ${categoriesOpen ? 'max-h-[600px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
+                <div className="flex flex-col gap-2 max-h-[340px] overflow-y-auto pr-2 scrollbar-thin overscroll-contain touch-pan-y">
                   <button
                     onClick={() => handleCategorySelect('all')}
                     className={`text-left px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border cursor-pointer ${
@@ -361,6 +379,19 @@ export default function Categories() {
                     }`}
                   >
                     Toutes les catégories
+                  </button>
+                  <button
+                    onClick={() => handleCategorySelect('promo')}
+                    className={`text-left px-4 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all border cursor-pointer flex items-center justify-between ${
+                      selectedCategory === 'promo'
+                        ? 'border-rose-500 bg-rose-600/20 text-rose-400 shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                        : 'border-rose-500/20 text-rose-400 hover:text-white hover:bg-rose-500/10'
+                    }`}
+                  >
+                    <span>Promotions</span>
+                    <span className="text-[10px] bg-rose-600 text-white font-black px-2 py-0.5 rounded-full">
+                      PROMO
+                    </span>
                   </button>
                   {categories.map((cat) => (
                     <button
@@ -392,8 +423,8 @@ export default function Categories() {
                   </div>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${sizesOpen ? 'rotate-180 text-purple-400' : ''}`} />
                 </button>
-                <div className={`transition-all duration-300 overflow-hidden ${sizesOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2">
+                <div className={`transition-all duration-300 ${sizesOpen ? 'max-h-[600px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pr-2 scrollbar-thin overscroll-contain touch-pan-y">
                     <button
                       onClick={() => handleSizeSelect('all')}
                       className={`py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all border text-center cursor-pointer ${
