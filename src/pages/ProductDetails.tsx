@@ -231,7 +231,13 @@ export default function ProductDetails() {
         
         {/* Back Button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (product?.category_id) {
+              navigate(`/categories/${product.category_id}`);
+            } else {
+              navigate('/');
+            }
+          }}
           className="flex items-center space-x-2 text-gray-400 hover:text-pink-500 mb-8 transition-colors group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
