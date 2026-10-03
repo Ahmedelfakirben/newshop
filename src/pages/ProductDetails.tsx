@@ -232,8 +232,12 @@ export default function ProductDetails() {
         {/* Back Button */}
         <button
           onClick={() => {
-            if (product?.category_id) {
-              navigate(`/categories/${product.category_id}`);
+            if (window.history.length > 2) {
+              navigate(-1);
+            } else if (product?.category_id) {
+              const savedSize = sessionStorage.getItem(`cat_size_${product.category_id}`);
+              const query = savedSize && savedSize !== 'all' ? `?size=${encodeURIComponent(savedSize)}` : '';
+              navigate(`/categories/${product.category_id}${query}`);
             } else {
               navigate('/');
             }

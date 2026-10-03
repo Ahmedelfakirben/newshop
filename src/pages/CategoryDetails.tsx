@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import ProductCard from '../components/ProductCard';
 import { 
@@ -13,6 +13,7 @@ import { useGSAP } from '@gsap/react';
 export default function CategoryDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [currentCategory, setCurrentCategory] = useState<any>(null);
@@ -25,24 +26,36 @@ export default function CategoryDetails() {
   });
   const [products, setProducts] = useState<any[]>([]);
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
-  const [selectedSize, setSelectedSize] = useState<string>('all');
+  
+  const initialSize = searchParams.get('size') || (id ? sessionStorage.getItem(`cat_size_${id}`) : null) || 'all';
+  const [selectedSize, setSelectedSize] = useState<string>(initialSize);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   
-  // Both filters start closed by default
+  // Both filters start closed by default, unless a size is active
   const [categoriesOpen, setCategoriesOpen] = useState(false);
-  const [sizesOpen, setSizesOpen] = useState(false);
+  const [sizesOpen, setSizesOpen] = useState(initialSize !== 'all');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 20;
+
+  // Sync size when URL or category id changes
+  useEffect(() => {
+    const urlSize = searchParams.get('size');
+    const savedSize = id ? sessionStorage.getItem(`cat_size_${id}`) : null;
+    const active = urlSize || savedSize || 'all';
+    setSelectedSize(active);
+    if (active !== 'all') {
+      setSizesOpen(true);
+    }
+  }, [id, searchParams]);
 
   // 1. Fetch Categories (for the category switcher) and Products in this category
   useEffect(() => {
     async function fetchData() {
       if (!id) return;
       setLoading(true);
-      setSelectedSize('all');
       setCurrentPage(1);
       window.scrollTo(0, 0);
 
@@ -149,6 +162,14 @@ export default function CategoryDetails() {
   const handleSizeSelect = (size: string) => {
     setSelectedSize(size);
     setCurrentPage(1); // Reset page on filter change
+    if (id) {
+      if (size === 'all') {
+        sessionStorage.removeItem(`cat_size_${id}`);
+      } else {
+        sessionStorage.setItem(`cat_size_${id}`, size);
+      }
+    }
+    setSearchParams(size === 'all' ? {} : { size }, { replace: true });
   };
 
   // Smart 5-page window pagination builder
